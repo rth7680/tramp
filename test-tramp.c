@@ -1,3 +1,5 @@
+#include <stdint.h>
+
 void * __tramp_stack_alloc (void *cfa, void *fnaddr, void *chain_value);
 
 extern char bounce[];
@@ -6,16 +8,18 @@ extern char bounce[];
 asm("bounce: movq %r10, %rax; ret");
 #elif defined(__aarch64__)
 asm("bounce: mov x0, x18; ret");
+#elif defined(__arm__)
+asm("bounce: mov r0, r12; mov pc, lr");
 #else
 # error unsupported
 #endif
 
 int main()
 {
-  void *t = __tramp_stack_alloc (__builtin_dwarf_cfa (), bounce,
-				 (void *)0x1122334455667788);
-  long (*tf)(void) = (long (*)(void)) t;
+  intptr_t test = (intptr_t)0x1122334455667788ULL;
+  void *t = __tramp_stack_alloc (__builtin_dwarf_cfa (), bounce, (void *)test);
+  intptr_t (*tf)(void) = (intptr_t (*)(void)) t;
 
-  long l = tf();
-  return l != 0x1122334455667788;
+  intptr_t l = tf();
+  return l != test;
 }

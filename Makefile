@@ -1,4 +1,4 @@
-CFLAGS = -fpic -g -D_PTHREADS -I ~/work/gcc/git-master/gcc/
+CFLAGS = -fpic -O2 -g -D_PTHREADS -I ~/work/gcc/git-master/gcc/
 
 test-tramp: test-tramp.c libtramp.so
 	$(CC) -g -o $@ -Wl,-rpath=. $^
