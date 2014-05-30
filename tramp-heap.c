@@ -1,7 +1,7 @@
 #define _GNU_SOURCE
 #include <limits.h>
+#include <pthread.h>
 
-#include "gthr.h"
 #include "tramp.h"
 
 #define BITS_PER_INT	(CHAR_BIT * sizeof(int))
@@ -28,7 +28,7 @@ struct tramp_heap_page
 #define TRAMP_HEAP_COUNT \
   (TRAMP_COUNT - TRAMP_HEAP_RESERVE)
 
-static __gthread_mutex_t lock = __GTHREAD_MUTEX_INIT;
+static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 static struct tramp_heap_page *cur_page;
 static struct tramp_heap_page *notfull_page_list;
@@ -40,7 +40,7 @@ __tramp_heap_alloc (uintptr_t fnaddr, uintptr_t chain_value)
   struct tramp_heap_page *page;
   unsigned int index;
 
-  __gthread_mutex_lock (&lock);
+  pthread_mutex_lock (&lock);
 
   /* Find a page with unused entries.  */
   page = cur_page;
@@ -101,7 +101,7 @@ __tramp_heap_alloc (uintptr_t fnaddr, uintptr_t chain_value)
     tramp_data[TRAMP_FUNCADDR_FIRST ? 0 : 1] = fnaddr;
     tramp_data[TRAMP_FUNCADDR_FIRST ? 1 : 0] = chain_value;
 
-    __gthread_mutex_unlock (&lock);
+    pthread_mutex_unlock (&lock);
 
     return tramp_code;
   }
@@ -117,7 +117,7 @@ __tramp_heap_free (void *tramp)
   index = ((uintptr_t)tramp & (PAGE_SIZE - 1)) / TRAMP_SIZE;
   index -= TRAMP_HEAP_RESERVE;
 
-  __gthread_mutex_lock (&lock);
+  pthread_mutex_lock (&lock);
 
   /* Decrement the inuse counter on the page.  Shuffle the page around
      to the proper list while we're at it.  */
@@ -171,5 +171,5 @@ __tramp_heap_free (void *tramp)
   }
 
  egress:
-  __gthread_mutex_unlock (&lock);
+  pthread_mutex_unlock (&lock);
 }
