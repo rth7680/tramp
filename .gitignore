@@ -1,0 +1,4 @@
+*.o
+*.so
+tramp-cpu.h
+test-tramp
